@@ -30,97 +30,127 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
   return (
     <>
       <TopBar home="/teacher" name={t.name} links={[{ href: "/teacher", label: "All classes" }]} />
-      <main className="wrap stack">
+      <main className="wrap stack-lg">
         <div className="row between">
           <div>
             <h1>{cls.name}</h1>
-            <p className="muted" style={{ margin: 0 }}>
-              Students log in at <b>/kid/login</b> with class code <span className="code">{cls.code}</span>, their name and their PIN.
+            <p className="muted" style={{ marginTop: "0.25rem" }}>
+              {kids.length} student{kids.length === 1 ? "" : "s"}
             </p>
+          </div>
+          <div className="card flat" style={{ padding: "0.75rem 1.1rem" }}>
+            <div className="small muted">Class code for student login</div>
+            <div className="code" style={{ fontSize: "1.3rem", background: "none", padding: 0 }}>
+              {cls.code}
+            </div>
           </div>
         </div>
 
         <div className="grid grid-3">
-          <div className="card">
-            <div className="muted small">Finished today's plan</div>
-            <div style={{ fontSize: "2rem", fontWeight: 900 }}>
-              {doneToday}/{kids.length}
+          <div className="card stat">
+            <div className="label">Practised today</div>
+            <div className="value">
+              {doneToday} of {kids.length}
             </div>
-            <div className="muted small">{practisedToday} practised at least once today</div>
+            <div className="meter good">
+              <div style={{ width: `${kids.length ? (doneToday / kids.length) * 100 : 0}%` }} />
+            </div>
+            <div className="hint" style={{ marginTop: "0.5rem" }}>
+              {practisedToday - doneToday > 0 ? `${practisedToday - doneToday} started but not finished` : "Finished = today's plan complete"}
+            </div>
           </div>
-          <div className="card">
-            <div className="muted small">Need a nudge (no practice in 2+ days)</div>
-            <div style={{ fontSize: "2rem", fontWeight: 900, color: inactive.length ? "var(--warn)" : "var(--good)" }}>{inactive.length}</div>
-            <div className="muted small">{inactive.map((s) => s.name).join(", ") || "Everyone is on track"}</div>
+          <div className="card stat">
+            <div className="label">Need a nudge</div>
+            <div className="value" style={{ color: inactive.length ? "var(--warn)" : "var(--good)" }}>
+              {inactive.length === 0 ? "None 🎉" : inactive.length}
+            </div>
+            <div className="hint">{inactive.length ? `No practice in 2+ days: ${inactive.map((s) => s.name).join(", ")}` : "Everyone practised recently"}</div>
           </div>
-          <div className="card">
-            <div className="muted small">Where the class is</div>
-            <div className="small" style={{ marginTop: "0.3rem" }}>
-              {moduleCounts.map(({ m, n }) => (
-                <div key={m.id} className="row between">
-                  <span>
-                    {m.icon} {m.title}
-                  </span>
-                  <b>{n}</b>
-                </div>
-              ))}
-              <div className="row between">
-                <span>🎓 Course complete</span>
-                <b>{finished}</b>
-              </div>
+          <div className="card stat">
+            <div className="label">Class progress</div>
+            <div className="value">
+              {(() => {
+                const n = summaries.reduce((acc, s) => acc + s.masteredCount, 0);
+                return `${n} skill${n === 1 ? "" : "s"}`;
+              })()}
+            </div>
+            <div className="hint">
+              mastered in total{finished ? ` · ${finished} finished the course` : ""}
+              {moduleCounts.filter((x) => x.n).length > 0 &&
+                ` · most are on ${[...moduleCounts].sort((a, b) => b.n - a.n)[0].m.title}`}
             </div>
           </div>
         </div>
 
         <section className="card">
-          <h2>Students</h2>
+          <div className="section-title">
+            <h2>Students</h2>
+            <p>Tap a name for the full report</p>
+          </div>
           {kids.length === 0 ? (
-            <p className="muted">No students yet. Add them below.</p>
+            <p className="muted">No students yet. Add your first one below.</p>
           ) : (
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Group</th>
+                    <th>Student</th>
                     <th>Today</th>
-                    <th>Streak</th>
-                    <th>Days (7d)</th>
-                    <th>Working on</th>
-                    <th>Mastered</th>
-                    <th>Weakest skill</th>
+                    <th>This week</th>
+                    <th style={{ minWidth: 180 }}>Progress</th>
+                    <th>Needs help with</th>
                     <th>Memory Test</th>
-                    <th>Parent code</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {summaries.map((s, i) => (
+                  {summaries.map((s) => (
                     <tr key={s.id}>
                       <td>
                         <Link href={`/teacher/kid/${s.id}`}>
                           <b>{s.name}</b>
                         </Link>
+                        <div className="small faint">{BAND_LABEL[s.band].split(" ")[0]}</div>
                       </td>
-                      <td className="small">{BAND_LABEL[s.band].split(" ")[0]}</td>
-                      <td>{s.doneToday ? <span className="pill good">Done</span> : s.lastPractice === today ? <span className="pill brand">Started</span> : <span className="pill warn">Not yet</span>}</td>
-                      <td>{s.streak > 0 ? `🔥 ${s.streak}` : "–"}</td>
-                      <td>{s.last7}/7</td>
-                      <td className="small">{s.currentModule ? `${moduleById(s.currentModule).icon} ${moduleById(s.currentModule).title}` : s.masteredCount === 6 ? "🎓 Complete" : "–"}</td>
-                      <td>{s.masteredCount}/6</td>
-                      <td className="small">
-                        {s.weakest ? (
-                          <span className={s.weakest.avg < 70 ? "pill warn" : "pill"}>
+                      <td>
+                        {s.doneToday ? (
+                          <span className="pill good">✓ Done</span>
+                        ) : s.lastPractice === today ? (
+                          <span className="pill brand">Started</span>
+                        ) : (
+                          <span className="pill">Not yet</span>
+                        )}
+                      </td>
+                      <td>
+                        <b>{s.last7}</b>
+                        <span className="muted">/7 days</span>
+                        {s.streak > 1 && <div className="small faint">🔥 {s.streak}-day streak</div>}
+                      </td>
+                      <td>
+                        <div className="meter good" style={{ maxWidth: 160 }}>
+                          <div style={{ width: `${(s.masteredCount / 6) * 100}%` }} />
+                        </div>
+                        <div className="small muted" style={{ marginTop: "0.35rem" }}>
+                          {s.masteredCount}/6 ·{" "}
+                          {s.currentModule ? moduleById(s.currentModule).title : s.masteredCount === 6 ? "Complete 🎓" : "Not started"}
+                        </div>
+                      </td>
+                      <td>
+                        {s.weakest && s.weakest.avg < 70 ? (
+                          <span className="pill warn">
                             {moduleById(s.weakest.module).title} · {s.weakest.avg}%
                           </span>
                         ) : (
-                          "–"
+                          <span className="faint small">Doing well</span>
                         )}
                       </td>
                       <td className="small">
-                        {s.baseline === null ? "Not taken" : `${s.baseline}% → ${s.bestChallenge ?? "–"}${s.bestChallenge !== null ? "%" : ""}`}
-                      </td>
-                      <td>
-                        <span className="code small">{kids[i].parent_code}</span>
+                        {s.baseline === null ? (
+                          <span className="faint">Not taken</span>
+                        ) : (
+                          <>
+                            {s.baseline}%{s.bestChallenge !== null && <b style={{ color: "var(--good)" }}> → {s.bestChallenge}%</b>}
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -131,10 +161,14 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
         </section>
 
         <section className="card mid">
-          <h2>Add a student</h2>
-          <p className="muted small">Use first names only. Give each child a 4-digit PIN they can remember, and share the parent code with their family.</p>
+          <div className="section-title">
+            <h2>Add a student</h2>
+          </div>
+          <p className="muted small" style={{ marginBottom: "1rem" }}>
+            First name only, plus a 4-digit PIN the child can remember. You'll get a parent code to share with the family.
+          </p>
           <Form action={addKid.bind(null, cls.id)} submit="Add student" resetOnOk>
-            <div className="grid grid-3">
+            <div className="grid grid-3" style={{ gap: "0.9rem" }}>
               <div>
                 <label htmlFor="name">First name</label>
                 <input id="name" name="name" required maxLength={40} />

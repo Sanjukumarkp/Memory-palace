@@ -12,17 +12,15 @@ export default function CoachNotes({ kidId }: { kidId: string }) {
       .catch(() => setErr(true));
   }, [kidId]);
   if (err) return <p className="muted">Couldn't load notes right now.</p>;
-  if (!data) return <p className="muted">Looking at the practice data…</p>;
+  if (!data) return <p className="muted">Reading the practice data…</p>;
   return (
     <>
-      <ul style={{ paddingLeft: "1.1rem", margin: 0 }}>
+      <ul className="notes">
         {data.notes.map((n, i) => (
-          <li key={i} style={{ marginBottom: "0.4rem" }}>
-            {n}
-          </li>
+          <li key={i}>{n}</li>
         ))}
       </ul>
-      <p className="muted small" style={{ marginTop: "0.5rem", marginBottom: 0 }}>
+      <p className="faint small" style={{ marginTop: "0.9rem" }}>
         {data.source === "ai" ? "Written by AI from this child's practice data." : "Based on this child's practice data."}
       </p>
     </>

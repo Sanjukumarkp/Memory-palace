@@ -19,46 +19,53 @@ export default async function ParentHome() {
   return (
     <>
       <TopBar home="/parent" name={p.name} />
-      <main className="wrap stack">
-        <h1>Your children</h1>
+      <main className="wrap stack-lg">
+        <div>
+          <h1>Your children</h1>
+          <p className="muted" style={{ marginTop: "0.25rem" }}>
+            A quick look at today. Open a card for the full report and tips for home.
+          </p>
+        </div>
+        {sums.length === 0 && <p className="muted">No children linked yet. Add one with the parent code from the teacher.</p>}
         <div className="grid grid-2">
           {sums.map((s) => (
-            <Link key={s.id} href={`/parent/kid/${s.id}`} className="card" style={{ color: "inherit", display: "block" }}>
+            <Link key={s.id} href={`/parent/kid/${s.id}`} className="card role-card" style={{ textAlign: "left", padding: "1.5rem" }}>
               <div className="row between">
-                <h2 style={{ margin: 0 }}>{s.name}</h2>
-                <span className={s.doneToday ? "pill good" : "pill warn"}>{s.doneToday ? "Done today ✓" : "Not done today"}</span>
+                <h2>{s.name}</h2>
+                <span className={s.doneToday ? "pill good" : "pill"}>{s.doneToday ? "✓ Done today" : "Not yet today"}</span>
               </div>
-              <div className="grid grid-3" style={{ marginTop: "0.75rem" }}>
-                <div>
-                  <div className="muted small">Streak</div>
-                  <b>{s.streak > 0 ? `🔥 ${s.streak} days` : "–"}</b>
-                </div>
-                <div>
-                  <div className="muted small">Skills mastered</div>
-                  <b>{s.masteredCount}/6</b>
-                </div>
-                <div>
-                  <div className="muted small">Working on</div>
-                  <b>{s.currentModule ? moduleById(s.currentModule).title : s.masteredCount === 6 ? "Course complete" : "–"}</b>
-                </div>
+              <div style={{ margin: "1.1rem 0 0.4rem" }} className="row between small">
+                <span className="muted">Skills mastered</span>
+                <b>{s.masteredCount} of 6</b>
+              </div>
+              <div className="meter good">
+                <div style={{ width: `${(s.masteredCount / 6) * 100}%` }} />
+              </div>
+              <div className="row between small" style={{ marginTop: "1rem" }}>
+                <span className="muted">
+                  {s.currentModule ? `Working on ${moduleById(s.currentModule).title}` : s.masteredCount === 6 ? "Course complete 🎓" : "Getting started"}
+                </span>
+                <span>{s.streak > 0 ? `🔥 ${s.streak}-day streak` : `${s.last7}/7 days this week`}</span>
               </div>
               {s.weakest && s.weakest.avg < 70 && (
-                <p className="small" style={{ marginTop: "0.6rem", marginBottom: 0, color: "var(--warn)" }}>
-                  Needs practice: {moduleById(s.weakest.module).title} ({s.weakest.avg}%)
-                </p>
+                <div className="alert sun small" style={{ marginTop: "1rem" }}>
+                  Could use extra practice: {moduleById(s.weakest.module).title}
+                </div>
               )}
             </Link>
           ))}
         </div>
-        <section className="card mid">
-          <h2>Add another child</h2>
-          <Form action={linkChild} submit="Add child" resetOnOk>
-            <div className="field">
-              <label htmlFor="code">Parent code from the teacher</label>
-              <input id="code" name="code" required style={{ textTransform: "uppercase" }} />
-            </div>
-          </Form>
-        </section>
+        <details className="more">
+          <summary>＋ Add another child</summary>
+          <div className="card mid">
+            <Form action={linkChild} submit="Add child" resetOnOk>
+              <div className="field">
+                <label htmlFor="code">Parent code from the teacher</label>
+                <input id="code" name="code" required style={{ textTransform: "uppercase" }} />
+              </div>
+            </Form>
+          </div>
+        </details>
       </main>
     </>
   );

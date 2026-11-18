@@ -180,17 +180,20 @@ export default function Practice({ module, mode }: { module: number; mode?: "bas
   // ---------- Screens ----------
   if (phase === "intro") {
     return (
-      <div className="card stack">
-        <h1>{title}</h1>
-        <h3>How it works</h3>
-        <ol style={{ paddingLeft: "1.2rem", margin: 0 }}>
-          {HOW[kindKey].map((h) => (
-            <li key={h} style={{ marginBottom: "0.4rem" }}>
-              {h}
+      <div className="card stack-lg">
+        <div className="center">
+          <div style={{ fontSize: "3rem", lineHeight: 1 }}>{title.split(" ")[0]}</div>
+          <h1 style={{ marginTop: "0.6rem" }}>{title.split(" ").slice(1).join(" ")}</h1>
+        </div>
+        <ol className="how">
+          {HOW[kindKey].map((h, i) => (
+            <li key={h}>
+              <span className="n">{i + 1}</span>
+              <span>{h}</span>
             </li>
           ))}
         </ol>
-        <button className="btn big" onClick={start}>
+        <button className="btn big block" onClick={start}>
           I'm ready! Start
         </button>
       </div>
@@ -227,9 +230,10 @@ export default function Practice({ module, mode }: { module: number; mode?: "bas
   if (phase === "done" && graded) {
     const r = graded.result;
     const cheer = graded.score >= 90 ? "Amazing! 🌟" : graded.score >= 80 ? "Great job! 🎉" : graded.score >= 60 ? "Good effort! 💪" : "Keep going, you're learning! 🌱";
+    const missed = graded.lines.filter((l) => !l.ok);
     return (
-      <div className="card stack">
-        <div className="center">
+      <div className="card stack-lg">
+        <div className="center stack-sm">
           <div className="result-score" style={{ color: graded.score >= 80 ? "var(--good)" : graded.score >= 60 ? "var(--brand)" : "var(--warn)" }}>
             {graded.score}%
           </div>
@@ -238,43 +242,46 @@ export default function Practice({ module, mode }: { module: number; mode?: "bas
             You got {graded.correct} out of {graded.total}.
           </p>
         </div>
-        {mode === "baseline" && <div className="alert ok">This is your starting score. Practise every day and watch it grow!</div>}
-        {r?.masteredNow && <div className="alert ok">🏅 You mastered this skill!{r.unlocked ? " A new skill is unlocked. Check your plan!" : ""}</div>}
-        {r && !r.masteredNow && graded.score >= 80 && mode !== "review" && (
-          <div className="alert ok">That counts as a mastery day ({Math.min(r.masteryDays, 3)} of 3). Come back on another day for the next one.</div>
-        )}
-        {r?.levelChange === "up" && <div className="alert ok">⬆️ Level up! Next time will be a little harder.</div>}
-        {r?.levelChange === "down" && <div className="alert err">Next time will be a little easier so you can build up again.</div>}
-        {graded.addedToReview > 0 && (
-          <p className="muted small">🔁 {graded.addedToReview} thing{graded.addedToReview === 1 ? "" : "s"} you missed will come back in your daily review.</p>
-        )}
-        <h3>Your answers</h3>
-        <div className="lines">
-          {graded.lines.map((l, i) => (
-            <div key={i} className={`line ${l.ok ? "ok" : "no"}`}>
-              <span>
-                {l.ok ? "✓ " : "✗ "}
-                {l.prompt !== l.correct ? (
-                  <>
-                    <b>{l.prompt}</b>
-                    <br />
-                    <span className="small">Answer: {l.correct}</span>
-                  </>
-                ) : (
-                  <b>{l.correct}</b>
-                )}
-              </span>
-              {!l.ok && <span className="muted small" style={{ textAlign: "right" }}>You: {l.yours || "(blank)"}</span>}
-            </div>
-          ))}
+        <div className="stack-sm">
+          {mode === "baseline" && <div className="alert ok">This is your starting score. Practise every day and watch it grow!</div>}
+          {r?.masteredNow && <div className="alert sun">🏅 You mastered this skill!{r.unlocked ? " A new skill is unlocked!" : ""}</div>}
+          {r && !r.masteredNow && graded.score >= 80 && mode !== "review" && (
+            <div className="alert ok">⭐ Mastery day {Math.min(r.masteryDays, 3)} of 3. Come back another day for the next one.</div>
+          )}
+          {r?.levelChange === "up" && <div className="alert ok">⬆️ Level up! Next time will be a little harder.</div>}
+          {r?.levelChange === "down" && <div className="alert sun">Next time will be a little easier, so you can build up again.</div>}
+          {graded.addedToReview > 0 && (
+            <p className="muted small center">🔁 {graded.addedToReview} thing{graded.addedToReview === 1 ? "" : "s"} you missed will come back in your review.</p>
+          )}
         </div>
-        <div className="row">
+        <details className="answers" open={missed.length > 0 && missed.length <= 4}>
+          <summary>{missed.length ? `See what you missed (${missed.length})` : "See your answers"}</summary>
+          <div className="lines">
+            {(missed.length ? missed : graded.lines).map((l, i) => (
+              <div key={i} className={`line ${l.ok ? "ok" : "no"}`}>
+                <span>
+                  {l.prompt !== l.correct ? (
+                    <>
+                      <b>{l.prompt}</b>
+                      <br />
+                      <span className="small">Answer: {l.correct}</span>
+                    </>
+                  ) : (
+                    <b>{l.correct}</b>
+                  )}
+                </span>
+                {!l.ok && <span className="muted small" style={{ textAlign: "right" }}>You: {l.yours || "(blank)"}</span>}
+              </div>
+            ))}
+          </div>
+        </details>
+        <div className="row" style={{ justifyContent: "center" }}>
           <a href="/kid" className="btn">
             Back to my plan
           </a>
           {mode !== "baseline" && (
             <button className="btn secondary" onClick={start}>
-              Try another round
+              Another round
             </button>
           )}
         </div>
@@ -300,12 +307,14 @@ export default function Practice({ module, mode }: { module: number; mode?: "bas
     return (
       <div className="card stack">
         <div className="row between">
-          <span className="pill brand">
-            Question {qIndex + 1} of {c.questions.length}
+          <span className="steps-dots">
+            {c.questions.map((_, i) => (
+              <i key={i} className={i <= qIndex ? "on" : ""} />
+            ))}
           </span>
-          <span className="muted small">No peeking. Answer from memory!</span>
+          <span className="muted small">Answer from memory!</span>
         </div>
-        <h2>{q.q}</h2>
+        <h2 style={{ fontSize: "1.35rem" }}>{q.q}</h2>
         <div className="options">
           {q.options.map((o, i) => (
             <button
@@ -332,11 +341,14 @@ export default function Practice({ module, mode }: { module: number; mode?: "bas
     return (
       <div className="card stack">
         <div className="row between">
-          <span className="pill brand">
+          <span className="muted small">
             Card {qIndex + 1} of {c.cards.length}
           </span>
         </div>
-        <div className="passage center" style={{ fontSize: "1.4rem", fontWeight: 800 }}>
+        <div className="bar">
+          <div style={{ width: `${(qIndex / c.cards.length) * 100}%` }} />
+        </div>
+        <div className="passage center" style={{ fontSize: "1.4rem", fontWeight: 800, padding: "2rem 1.25rem" }}>
           {card.prompt}
         </div>
         <div className="options">
