@@ -4,12 +4,22 @@ import { randomBytes } from "node:crypto";
 // Connects lazily on first query, so builds work before DATABASE_URL is configured.
 const url = process.env.DATABASE_URL || "postgres://not-configured@localhost:1/missing";
 
+// Local databases and Render's private network (hostnames without a dot, e.g. dpg-xxxx-a) don't use SSL.
+function needsSsl(u: string) {
+  try {
+    const host = new URL(u).hostname;
+    return !(host === "localhost" || host === "127.0.0.1" || !host.includes("."));
+  } catch {
+    return true;
+  }
+}
+
 const globalForDb = globalThis as unknown as { sql?: postgres.Sql };
 
 export const sql =
   globalForDb.sql ??
   postgres(url, {
-    ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : "require",
+    ssl: needsSsl(url) ? "require" : false,
     max: 5,
     idle_timeout: 20,
   });
